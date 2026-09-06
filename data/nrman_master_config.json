@@ -1,0 +1,12 @@
+{
+  "ownerAccount": "sinchanar1002@gmail.com",
+  "sheetName": "nrman_master_database",
+  "spreadsheetId": "",
+  "spreadsheetUrl": "",
+  "tables": [
+    "nrman_master_database",
+    "clients",
+    "Master_Client_Codes"
+  ],
+  "lastSynced": ""
+}
