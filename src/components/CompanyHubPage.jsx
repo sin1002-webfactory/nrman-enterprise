@@ -220,9 +220,16 @@ export default function CompanyHubPage({ currentUser, onSelectCompany, onLogout,
       const clientScoped = localStorage.getItem(`rgc_company_registry_${activeClientCode}`);
       let list = clientScoped ? JSON.parse(clientScoped) : [];
       if (!list || list.length === 0) {
-        const stored = localStorage.getItem('rgc_company_registry');
+        // The unscoped registry is legacy data and must never be exposed to a non-CEO client.
+        const isCeo = activeClientCode === 'ceo@nrman';
+        const stored = isCeo ? localStorage.getItem('rgc_company_registry') : null;
         list = stored ? JSON.parse(stored) : [];
       }
+
+      list = (list || []).filter((company) => {
+        if (activeClientCode === 'ceo@nrman') return true;
+        return String(company?.clientCode || '').trim().toLowerCase() === activeClientCode.toLowerCase();
+      });
 
       // Preserve valid Google Sheet IDs, ensure sinchanar1002@gmail.com email
       list = (list || []).map((c) => {

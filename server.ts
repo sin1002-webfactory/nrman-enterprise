@@ -701,9 +701,23 @@ const TABLE_HEADER_TEMPLATES: Record<string, any[]> = {
 };
 
 // -------------------------------------------------------------
-// DEDICATED MULTI-TENANT COMPANY PROVISIONING ENDPOINT
-// -------------------------------------------------------------
-app.post('/api/company/check-gst', (req, res) => {
+  // DEDICATED MULTI-TENANT COMPANY PROVISIONING ENDPOINT
+  // -------------------------------------------------------------
+  app.post('/api/client/verify', (req, res) => {
+    const clientCode = String(req.body?.clientCode || '').trim().toLowerCase();
+    if (!clientCode) return res.status(400).json({ success: false, verified: false, error: 'Client code is required' });
+    if (clientCode === 'ceo@nrman') return res.json({ success: true, verified: true, clientCode, isCeo: true });
+
+    const registry = Array.isArray(dbStore.company_registry) ? dbStore.company_registry : [];
+    const master = Array.isArray(dbStore.nrman_master_database) ? dbStore.nrman_master_database : [];
+    const verified = registry.some((company: any) => String(company?.clientCode || '').trim().toLowerCase() === clientCode)
+      || master.some((company: any) => String(company?.clientCode || company?.client_code || '').trim().toLowerCase() === clientCode);
+
+    if (!verified) return res.status(401).json({ success: false, verified: false, error: 'Invalid client code. The CEO must generate this code before access is granted.' });
+    return res.json({ success: true, verified: true, clientCode, isCeo: false });
+  });
+
+  app.post('/api/company/check-gst', (req, res) => {
   try {
     const { gstNumber, excludePrefix } = req.body;
     const cleanGst = (gstNumber || '').trim().toUpperCase();

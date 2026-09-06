@@ -32,7 +32,7 @@ export default function HomePage({ onClientCodeVerified }: HomePageProps) {
     setShowClientCodeModal(true);
   };
 
-  const handleVerifyCode = (e?: React.FormEvent) => {
+  const handleVerifyCode = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMsg('');
     const trimmed = clientCode.trim().toLowerCase();
@@ -44,11 +44,18 @@ export default function HomePage({ onClientCodeVerified }: HomePageProps) {
     }
 
     setLoading(true);
+    try {
+      const response = await fetch('/api/client/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientCode: trimmed })
+      });
+      const result = await response.json();
+      if (!response.ok || !result?.verified) {
+        throw new Error(result?.error || 'Invalid client code');
+      }
 
-    // Accept rgc@nrman or custom client codes
-    if (trimmed === REQUIRED_CLIENT_CODE || trimmed.includes('@') || trimmed.length >= 3) {
       setIsSuccess(true);
-      setErrorMsg('');
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('rgc_client_code_verified', 'true');
         localStorage.setItem('rgc_client_code_verified', 'true');
@@ -59,13 +66,11 @@ export default function HomePage({ onClientCodeVerified }: HomePageProps) {
         setShowClientCodeModal(false);
         onClientCodeVerified(trimmed);
       }, 350);
-    } else {
-      setTimeout(() => {
-        setLoading(false);
-        setErrorMsg("Invalid Client Code. Please verify and try again.");
-        setClientCode('');
-        inputRef.current?.focus();
-      }, 250);
+    } catch (error: any) {
+      setLoading(false);
+      setErrorMsg(error?.message || 'Invalid client code. The CEO must generate it first.');
+      setClientCode('');
+      inputRef.current?.focus();
     }
   };
 

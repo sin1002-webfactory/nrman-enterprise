@@ -31,7 +31,8 @@ export default function App() {
       if (savedClientCode === 'ceo@nrman' && (storedPath === '/ceo' || !storedPath || storedPath === '/')) {
         return '/ceo';
       }
-      if (storedPath && storedPath !== '/') return storedPath;
+      const verified = localStorage.getItem('rgc_client_code_verified') === 'true' || sessionStorage.getItem('rgc_client_code_verified') === 'true';
+      if (storedPath && storedPath !== '/' && (storedPath === '/home' || verified)) return storedPath;
       
       const savedUser = localStorage.getItem('rgc_current_user');
       if (savedUser) {
@@ -145,7 +146,16 @@ export default function App() {
   }, [currentUser]);
 
   // View Resolution Logic
+  const clientCodeVerified = typeof window !== 'undefined' && (
+    localStorage.getItem('rgc_client_code_verified') === 'true' ||
+    sessionStorage.getItem('rgc_client_code_verified') === 'true'
+  );
   const showHomePage = (currentPath === '/home' || currentPath === '/' || !currentPath);
+  const protectedClientPath = currentPath === '/hub' || currentPath === '/ceo' || currentPath.startsWith('/dashboard/');
+
+  useEffect(() => {
+    if (protectedClientPath && !clientCodeVerified) navigateTo('/home');
+  }, [protectedClientPath, clientCodeVerified]);
 
   return (
     <div className="min-h-screen w-full bg-slate-950 font-sans text-slate-100 flex flex-col assistant-scrollbar">
