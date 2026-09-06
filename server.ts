@@ -1803,17 +1803,16 @@ app.post('/api/master-database/create-master-sheet', async (req, res) => {
       });
     }
 
-    // Direct creation URL in user's Google account
-    const directCreateUrl = `https://docs.google.com/spreadsheets/create?title=nrman_master_database&authuser=${encodeURIComponent(ownerEmail)}`;
-    return res.json({
-      success: true,
-      created: false,
-      needsLink: true,
-      directCreateUrl,
-      spreadsheetId: masterSheetConfig.spreadsheetId || '',
-      spreadsheetUrl: masterSheetConfig.spreadsheetUrl || '',
-      message: 'Opening Google Sheets to create separate spreadsheet "nrman_master_database".'
-    });
+  return res.status(502).json({
+  success: false,
+  created: false,
+  needsLink: false,
+  spreadsheetId: '',
+  spreadsheetUrl: '',
+  error: targetGasUrl
+    ? 'Apps Script did not return a real master spreadsheet ID. Redeploy Code.gs as a web app and try again.'
+    : 'Apps Script URL is not configured. Add the deployed Apps Script web app URL before creating the master database.'
+  });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'Failed to create master sheet' });
   }

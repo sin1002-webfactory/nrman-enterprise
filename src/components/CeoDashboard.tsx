@@ -220,24 +220,9 @@ export default function CeoDashboard({ onLogout, onNavigateToHub }: CeoDashboard
         return;
       }
 
-      // Direct separate spreadsheet creation link
-      const directCreateUrl = data?.directCreateUrl || `https://docs.google.com/spreadsheets/create?title=nrman_master_database&authuser=${encodeURIComponent(masterSheet.ownerAccount || 'sinchanar1002@gmail.com')}`;
-      
-      // Automatically copy 10 column headers to clipboard for instant 1-click paste
-      try {
-        if (navigator.clipboard) {
-          await navigator.clipboard.writeText(MASTER_COLUMN_HEADERS.join('\t'));
-          setCopiedHeaders(true);
-          setTimeout(() => setCopiedHeaders(false), 8000);
-        }
-      } catch (_) {}
-
-      window.open(directCreateUrl, '_blank');
-      showToast('success', 'Creating separate "nrman_master_database" sheet. Headers copied to clipboard! Paste URL below to link.');
+      showToast('error', data?.error || 'Master sheet creation failed. No sheet was opened or linked.');
     } catch (err: any) {
-      const directCreateUrl = `https://docs.google.com/spreadsheets/create?title=nrman_master_database&authuser=${encodeURIComponent(masterSheet.ownerAccount || 'sinchanar1002@gmail.com')}`;
-      window.open(directCreateUrl, '_blank');
-      showToast('success', 'Opening Google Sheets to create separate "nrman_master_database".');
+      showToast('error', err?.message || 'Master sheet creation failed. Check the Apps Script deployment and try again.');
     } finally {
       setIsCreatingMasterSheet(false);
     }

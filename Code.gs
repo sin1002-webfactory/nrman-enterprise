@@ -803,7 +803,7 @@ function doPost(e) {
       }
       if (!mSs) {
         try {
-          mSs = SpreadsheetApp.create('nrman_master_database');
+          mSs = SpreadsheetApp.create('nrman master database');
           isNewMaster = true;
         } catch(eCreate) {
           Logger.log('SpreadsheetApp.create failed: ' + eCreate);
