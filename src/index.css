@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+html, body, #root {
+  width: 100%;
+  min-height: 100vh;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+  background-color: #020617;
+}
+
+/* =========================================================
+   HARDCODED HIGH-VISIBILITY SCROLLBARS (#334155 / #e2e8f8)
+   ========================================================= */
+
+/* Firefox universal scrollbar */
+* {
+  scrollbar-width: auto !important;
+  scrollbar-color: #334155 #e2e8f8 !important;
+}
+
+/* WebKit (Chrome, Edge, Safari, Opera) universal scrollbar */
+::-webkit-scrollbar {
+  width: 14px !important;
+  height: 14px !important;
+  display: block !important;
+}
+
+::-webkit-scrollbar-track {
+  background: #e2e8f8 !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155 !important;
+  border-radius: 6px !important;
+  border: 2px solid #e2e8f8 !important;
+  min-height: 44px !important;
+  min-width: 44px !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1e293b !important;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #0f172a !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: #cbd5e1 !important;
+}
+
+/* Specific high-visibility class for Assistant & Manager Dashboards */
+.assistant-scrollbar,
+.custom-scrollbar,
+.table-scrollbar,
+.dashboard-scroll-container {
+  scrollbar-width: auto !important;
+  scrollbar-color: #334155 #e2e8f8 !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.assistant-scrollbar::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar,
+.table-scrollbar::-webkit-scrollbar,
+.dashboard-scroll-container::-webkit-scrollbar {
+  width: 14px !important;
+  height: 14px !important;
+  display: block !important;
+}
+
+.assistant-scrollbar::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track,
+.table-scrollbar::-webkit-scrollbar-track,
+.dashboard-scroll-container::-webkit-scrollbar-track {
+  background: #e2e8f8 !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.assistant-scrollbar::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb,
+.table-scrollbar::-webkit-scrollbar-thumb,
+.dashboard-scroll-container::-webkit-scrollbar-thumb {
+  background: #334155 !important;
+  border-radius: 6px !important;
+  border: 2.5px solid #e2e8f8 !important;
+}
+
+.assistant-scrollbar::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.table-scrollbar::-webkit-scrollbar-thumb:hover,
+.dashboard-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #1e293b !important;
+}
+
+/* Ensure smooth touch & keyboard scrolling across scrollable containers */
+.overflow-x-auto, .overflow-y-auto, .overflow-auto {
+  -webkit-overflow-scrolling: touch !important;
+  scroll-behavior: smooth !important;
+}

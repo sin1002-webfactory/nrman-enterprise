@@ -1,0 +1,8 @@
+{
+  "name": "Remix Royal Gokul Constructions Portal",
+  "description": "Enterprise Construction Management Portal with CEO Master Control Center (ceo@nrman), multi-client company registry, real-time Google Sheets database sync, and duplicate GST protection.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

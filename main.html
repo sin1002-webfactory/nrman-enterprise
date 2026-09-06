@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full w-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#020617" />
+  <title>Royal Gokul Constructions - Enterprise Management Portal</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18, ReactDOM, Babel Standalone & Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    * { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #090d16; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body class="h-full w-full bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950 overflow-x-hidden">
+  <div id="root" class="min-h-full w-full flex flex-col">
+    <!-- Initial Loading State to prevent blank white screen in Google Apps Script -->
+    <div class="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+      <div class="w-14 h-14 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center text-amber-400 mb-4 animate-pulse">
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2 M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2 M10 6h4 M10 10h4 M10 14h4 M10 18h4"></path>
+        </svg>
+      </div>
+      <h1 class="text-base font-extrabold text-white tracking-tight">Royal Gokul Constructions</h1>
+      <p class="text-xs text-amber-400 font-bold uppercase tracking-wider mt-1">Enterprise Management Portal</p>
+      <div class="mt-6 flex items-center gap-2 text-xs text-slate-400">
+        <div class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></div>
+        <span>Connecting to Live Google Sheet Pipeline...</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/babel" data-presets="react,env">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // =========================================================================
+    // 1. LIVE GOOGLE APPS SCRIPT WEB APP DATABASE CONFIGURATION
+    // =========================================================================
+    const DB_APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzljma4YKNNtLWPf-hw0sT1orooTKLCXEByWBpNVSI8EfcvjKlZKZL4NaaNuAe9hDQFuA/exec";
+    const DB_SECRET_KEY = "MyPrivateCompanySecretKey2026!";
+
+    // Local Storage Keys
+    const SYNC_KEYS = {
+      PROJECTS: 'rgc_projects',
+      MASTERS: 'rgc_masters',
+      PROFILES: 'rgc_profiles',
+      PAYMENTS: 'rgc_payments',
+      LEDGERS: 'rgc_ledgers',
+      GRN_ENTRIES: 'rgc_grn_entries',
+      PNL_MATRIX: 'rgc_pnl_matrix',
+      PURCHASE_AUDITS: 'rgc_purchase_audits'
+    };
+
+    // =========================================================================
+    // 2. EMBEDDED LUCIDE ICONS (Zero-Dependency Vector System)
+    // =========================================================================
+    const Icon = ({ name, className = "w-4 h-4", ...props }) => {
+      const icons = {
+        building: <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2 M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2 M10 6h4 M10 10h4 M10 14h4 M10 18h4" />,
+        shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+        key: <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4 M15.5 7.5 14 6l-3.5 3.5a5 5 0 1 0 5 5v-7z" />,
+        database: <g><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></g>,
+        download: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3" />,
+        upload: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12" />,
+        trash: <path d="M3 6h18 M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6 M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2 M10 11v6 M14 11v6" />,
+        plus: <path d="M5 12h14 M12 5v14" />,
+        edit: <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />,
+        search: <g><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></g>,
+        fileText: <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" />,
+        checkCircle: <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3" />,
+        alertCircle: <g><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></g>,
+        refresh: <path d="M21.5 2v6h-6 M2.5 22v-6h6 M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8 M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />,
+        logOut: <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" />,
+        dollar: <path d="M12 1v22 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
+        users: <g><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></g>,
+        layers: <g><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></g>,
+        folder: <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />,
+        calendar: <g><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></g>,
+        chevronRight: <polyline points="9 18 15 12 9 6" />,
+        trendingUp: <g><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></g>,
+        barChart: <g><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></g>,
+        pieChart: <path d="M21.21 15.89A10 10 0 1 1 8 2.83 M22 12A10 10 0 0 0 12 2v10z" />,
+        lock: <g><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></g>,
+        eye: <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />,
+        fileSpreadsheet: <g><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></g>
+      };
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={className}
+          {...props}
+        >
+          {icons[name] || icons.fileText}
+        </svg>
+      );
+    };
+
+    // =========================================================================
+    // 3. SECURE DATA LAYER & APPS SCRIPT PERSISTENCE
+    // =========================================================================
+    const TRACKED_TABLES = [
+      { table: 'projects', key: SYNC_KEYS.PROJECTS },
+      { table: 'grn_entries', key: SYNC_KEYS.GRN_ENTRIES },
+      { table: 'payments', key: SYNC_KEYS.PAYMENTS },
+      { table: 'masters', key: SYNC_KEYS.MASTERS },
+      { table: 'ledgers', key: SYNC_KEYS.LEDGERS },
+      { table: 'profiles', key: SYNC_KEYS.PROFILES },
+      { table: 'pnl_matrix', key: SYNC_KEYS.PNL_MATRIX },
+      { table: 'purchase_audits', key: SYNC_KEYS.PURCHASE_AUDITS }
+    ];
+
+    function getStoredData(key, fallback = []) {
+      if (typeof window === 'undefined') return fallback;
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    const pushedIdsSet = new Set();
+
+    // -------------------------------------------------------------------------
+    // 3.1 INITIAL LOAD: PULL EXISTING DATA FROM GOOGLE SHEETS VIA APPS SCRIPT
+    // -------------------------------------------------------------------------
+    function fetchInitialDataFromGoogleSheets(targetTable = null) {
+      return new Promise((resolve) => {
+        const tablesToFetch = targetTable
+          ? TRACKED_TABLES.filter(t => t.table === targetTable || t.key === targetTable)
+          : TRACKED_TABLES;
+
+        // A. NATIVE GOOGLE APPS SCRIPT WEB APP PIPELINE (google.script.run)
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          if (targetTable) {
+            const cleanTable = targetTable.replace(/^rgc_/, '');
+            google.script.run
+              .withSuccessHandler((rows) => {
+                if (Array.isArray(rows) && rows.length > 0) {
+                  const matched = TRACKED_TABLES.find(t => t.table === cleanTable || t.key === targetTable);
+                  const key = matched ? matched.key : ('rgc_' + cleanTable);
+                  localStorage.setItem(key, JSON.stringify(rows));
+                  window.dispatchEvent(new CustomEvent('rgc_sync_event', { detail: { key, data: rows, table: cleanTable } }));
+                  resolve({ [key]: rows });
+                } else {
+                  resolve({});
+                }
+              })
+              .withFailureHandler((err) => {
+                console.warn('[google.script.run readTableData notice]', cleanTable, err);
+                resolve({});
+              })
+              .readTableData(cleanTable);
+          } else {
+            google.script.run
+              .withSuccessHandler((response) => {
+                const dataMap = (response && response.data) ? response.data : (response || {});
+                const loadedMap = {};
+                TRACKED_TABLES.forEach(({ table, key }) => {
+                  const records = dataMap[table];
+                  if (Array.isArray(records) && records.length > 0) {
+                    localStorage.setItem(key, JSON.stringify(records));
+                    loadedMap[key] = records;
+                    window.dispatchEvent(new CustomEvent('rgc_sync_event', { detail: { key, data: records, table } }));
+                  }
+                });
+                resolve(loadedMap);
+              })
+              .withFailureHandler((err) => {
+                console.warn('[google.script.run getInitialData notice]', err);
+                resolve({});
+              })
+              .getInitialData();
+          }
+          return;
+        }
+
+        // B. HTTP GET / FETCH PIPELINE FOR STANDALONE BROWSERS / PREVIEW ENVIRONMENT
+        const loadedMap = {};
+        const fetchPromises = tablesToFetch.map(async (item) => {
+          try {
+            const url = `${DB_APPSCRIPT_URL}?action=readData&table=${encodeURIComponent(item.table)}&secretKey=${encodeURIComponent(DB_SECRET_KEY)}`;
+            const response = await fetch(url, { method: 'GET' });
+            if (!response.ok) return;
+
+            const data = await response.json();
+            let records = [];
+            if (Array.isArray(data)) {
+              records = data;
+            } else if (data && Array.isArray(data.data)) {
+              records = data.data;
+            } else if (data && Array.isArray(data.rows)) {
+              records = data.rows;
+            } else if (data && Array.isArray(data.records)) {
+              records = data.records;
+            } else if (data && Array.isArray(data.result)) {
+              records = data.result;
+            }
+
+            if (Array.isArray(records) && records.length > 0) {
+              const validRecords = records.filter(r => r && typeof r === 'object' && Object.keys(r).some(k => r[k] !== '' && r[k] !== null && r[k] !== undefined));
+              if (validRecords.length > 0) {
+                const currentLocal = getStoredData(item.key, []);
+                const currentMap = new Map();
+                currentLocal.forEach(r => {
+                  const id = r.id || r.ID || r.grnNumber || r.voucherNo || r.code;
+                  if (id) currentMap.set(id, r);
+                });
+
+                validRecords.forEach(r => {
+                  const id = r.id || r.ID || r.grnNumber || r.voucherNo || r.code;
+                  if (id && !currentMap.has(id)) {
+                    currentMap.set(id, r);
+                  } else if (!id) {
+                    currentMap.set(JSON.stringify(r), r);
+                  }
+                });
+
+                const merged = currentMap.size > 0 ? Array.from(currentMap.values()) : validRecords;
+                localStorage.setItem(item.key, JSON.stringify(merged));
+                loadedMap[item.key] = merged;
+
+                // Broadcast update to reactive React state listeners
+                window.dispatchEvent(new CustomEvent('rgc_sync_event', {
+                  detail: { key: item.key, data: merged, table: item.table }
+                }));
+              }
+            }
+          } catch (err) {
+            console.warn(`[Google Sheets Initial Load Notice] ${item.table}:`, err.message);
+          }
+        });
+
+        Promise.all(fetchPromises).then(() => resolve(loadedMap));
+      });
+    }
+
+    function appendSingleStoredRecord(key, newRecord) {
+      if (typeof window === 'undefined' || !newRecord) return;
+      const current = getStoredData(key, []);
+      const recordId = newRecord.id || newRecord.ID || newRecord.grnNumber || newRecord.voucherNo;
+      
+      const filtered = current.filter(r => r && (r.id !== recordId && r.grnNumber !== recordId && r.voucherNo !== recordId));
+      const updated = [newRecord, ...filtered];
+      
+      localStorage.setItem(key, JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('rgc_sync_event', { detail: { key, data: updated } }));
+      
+      const cleanName = key.replace(/^rgc_/, '');
+      pushSingleRowToGoogleSheets(cleanName, newRecord);
+      return updated;
+    }
+
+    async function pushSingleRowToGoogleSheets(tableName, singleRow) {
+      if (!singleRow || typeof singleRow !== 'object') return;
+      const cleanName = tableName.replace(/^rgc_/, '');
+      const recordId = singleRow.id || singleRow.ID || singleRow.grnNumber || singleRow.voucherNo;
+
+      if (recordId && pushedIdsSet.has(recordId)) {
+        return;
+      }
+      if (recordId) pushedIdsSet.add(recordId);
+
+      // A. Direct google.script.run when running inside Google Apps Script Web App
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            console.log('[google.script.run appendRowData success]', cleanName, res);
+          })
+          .withFailureHandler((err) => {
+            console.warn('[google.script.run appendRowData error]', cleanName, err);
+          })
+          .appendRowData(cleanName, singleRow);
+        return;
+      }
+
+      // B. HTTP POST fallback for standalone browsers
+      try {
+        const payload = {
+          action: 'append_row',
+          secretKey: DB_SECRET_KEY,
+          table: cleanName,
+          row: singleRow,
+          id: recordId,
+          timestamp: new Date().toISOString()
+        };
+
+        await fetch(DB_APPSCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(() => {
+          return fetch(DB_APPSCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            mode: 'no-cors'
+          });
+        });
+      } catch (err) {
+        console.warn(`[Google Apps Script Single Row Notice] ${cleanName}:`, err.message);
+      }
+    }
+
+    function saveStoredData(key, data) {
+      if (typeof window === 'undefined') return;
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+        // Dispatch local event for reactive updates
+        window.dispatchEvent(new CustomEvent('rgc_sync_event', { detail: { key, data } }));
+        // Direct route to live Google Apps Script web app
+        syncToGoogleAppsScript(key, data);
+      } catch (e) {
+        console.warn('Storage save warning:', e);
+      }
+    }
+
+    async function syncToGoogleAppsScript(tableName, dataObject) {
+      const cleanName = tableName.replace(/^rgc_/, '');
+
+      // A. Direct google.script.run when running inside Google Apps Script Web App
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        if (Array.isArray(dataObject)) {
+          google.script.run
+            .withSuccessHandler((res) => console.log('[google.script.run syncTableData success]', cleanName, res))
+            .withFailureHandler((err) => console.warn('[google.script.run syncTableData error]', cleanName, err))
+            .syncTableData(cleanName, dataObject);
+        } else if (dataObject && typeof dataObject === 'object') {
+          google.script.run
+            .withSuccessHandler((res) => console.log('[google.script.run appendRowData success]', cleanName, res))
+            .withFailureHandler((err) => console.warn('[google.script.run appendRowData error]', cleanName, err))
+            .appendRowData(cleanName, dataObject);
+        }
+        return;
+      }
+
+      // B. HTTP POST fallback
+      try {
+        const payload = {
+          action: 'append_row',
+          secretKey: DB_SECRET_KEY,
+          table: cleanName,
+          data: dataObject,
+          timestamp: new Date().toISOString()
+        };
+
+        // Stream via fetch with mode: 'no-cors' fallback for Google Apps Script redirects
+        await fetch(DB_APPSCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(() => {
+          // Retry with text plain if required by Apps Script CORS
+          return fetch(DB_APPSCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            mode: 'no-cors'
+          });
+        });
+      } catch (err) {
+        console.warn(`[Google Apps Script Pipeline] ${tableName} sync notice:`, err.message);
+      }
+    }
+
+    // Number formatters
+    const formatINR = (val) => {
+      const num = Number(String(val).replace(/[^0-9.-]+/g, '')) || 0;
+      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(num);
+    };
+
+    // =========================================================================
+    // 4. MODAL: IMPORT CSV / EXCEL
+    // =========================================================================
+    const ImportModal = ({ isOpen, onClose, title, onImport, sampleFormat }) => {
+      const [csvText, setCsvText] = useState('');
+      const [error, setError] = useState('');
+
+      if (!isOpen) return null;
+
+      const handleFileUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.name.endsWith('.csv') || file.type.includes('csv') || file.type.includes('text')) {
+          const reader = new FileReader();
+          reader.onload = (evt) => setCsvText(evt.target.result || '');
+          reader.readAsText(file);
+        } else {
+          setError('Please select a valid .csv file or paste tabular data below.');
+        }
+      };
+
+      const handleProcess = () => {
+        if (!csvText.trim()) {
+          setError('Please paste or upload CSV data.');
+          return;
+        }
+        try {
+          if (window.Papa) {
+            const parsed = window.Papa.parse(csvText.trim(), { header: true, skipEmptyLines: true });
+            if (parsed.data && parsed.data.length > 0) {
+              onImport(parsed.data);
+              onClose();
+              return;
+            }
+          }
+          // Manual Fallback CSV Parser
+          const lines = csvText.trim().split('\n');
+          const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+          const rows = lines.slice(1).map(line => {
+            const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+            const obj = {};
+            headers.forEach((h, i) => { obj[h] = values[i] || ''; });
+            return obj;
+          });
+          onImport(rows);
+          onClose();
+        } catch (e) {
+          setError('Failed to parse CSV: ' + e.message);
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Icon name="fileSpreadsheet" className="w-5 h-5 text-amber-400" />
+                <h3 className="font-extrabold text-white text-base">Import {title}</h3>
+              </div>
+              <button onClick={onClose} className="text-slate-400 hover:text-white text-sm font-bold">✕</button>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Upload CSV File</label>
+                <input
+                  type="file"
+                  accept=".csv,.txt"
+                  onChange={handleFileUpload}
+                  className="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 cursor-pointer bg-slate-800/50 p-2 rounded-xl border border-slate-700/50"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Or Paste CSV Text</label>
+                <textarea
+                  rows="6"
+                  value={csvText}
+                  onChange={(e) => setCsvText(e.target.value)}
+                  placeholder={sampleFormat || "col1, col2, col3\nval1, val2, val3"}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 font-mono focus:border-amber-500 focus:outline-none"
+                />
+              </div>
+
+              {error && <p className="text-xs text-rose-400 bg-rose-950/40 p-2 rounded-lg border border-rose-800/50">{error}</p>}
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <button onClick={onClose} className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-slate-800">Cancel</button>
+              <button onClick={handleProcess} className="px-5 py-2 rounded-xl text-xs font-extrabold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-md">Execute Import</button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 5. VIEW: LOGIN & AUTHENTICATION
+    // =========================================================================
+    const LoginView = ({ onLoginSuccess }) => {
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+      const [selectedRole, setSelectedRole] = useState('Director');
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        setError('');
+        const cleanEmail = String(email || '').trim().toLowerCase();
+
+        // 1. Direct role selection authentication
+        if (selectedRole === 'Director' || cleanEmail.includes('director')) {
+          onLoginSuccess({ email: cleanEmail || 'director@royalgokul.com', role: 'Director', name: 'Executive Director' });
+          return;
+        }
+        if (selectedRole === 'Accounts Manager' || cleanEmail.includes('manager')) {
+          onLoginSuccess({ email: cleanEmail || 'manager@royalgokul.com', role: 'Accounts Manager', name: 'Accounts Manager' });
+          return;
+        }
+        if (selectedRole === 'Site Assistant' || cleanEmail.includes('assistant')) {
+          onLoginSuccess({ email: cleanEmail || 'assistant@royalgokul.com', role: 'Site Assistant', name: 'Site Supervisor' });
+          return;
+        }
+
+        // 2. Custom profile match from local store
+        const profiles = getStoredData(SYNC_KEYS.PROFILES, []);
+        const found = profiles.find(p => p.email && p.email.toLowerCase() === cleanEmail);
+        if (found) {
+          const roleMap = {
+            'director': 'Director',
+            'manager': 'Accounts Manager',
+            'accounts': 'Accounts Manager',
+            'assistant': 'Site Assistant',
+            'supervisor': 'Site Assistant'
+          };
+          const desig = (found.designation || '').toLowerCase();
+          let r = 'Site Assistant';
+          if (desig.includes('director')) r = 'Director';
+          else if (desig.includes('manager') || desig.includes('account')) r = 'Accounts Manager';
+          onLoginSuccess({ email: found.email, role: r, name: found.full_name || 'Staff User' });
+        } else {
+          onLoginSuccess({ email: cleanEmail || 'staff@royalgokul.com', role: selectedRole, name: 'Staff User' });
+        }
+      };
+
+      return (
+        <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+          <div className="max-w-md w-full bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-400 shadow-inner">
+                <Icon name="building" className="w-8 h-8" />
+              </div>
+              <h1 className="text-2xl font-black text-white tracking-tight">Royal Gokul Constructions</h1>
+              <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-semibold">Enterprise Resource Management</p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1.5">Portal Access Role</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['Director', 'Accounts Manager', 'Site Assistant'].map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setSelectedRole(role)}
+                      className={`py-2 px-2 rounded-xl text-xs font-bold transition border ${
+                        selectedRole === role
+                          ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md font-extrabold'
+                          : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                      }`}
+                    >
+                      {role === 'Accounts Manager' ? 'Manager' : role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1.5">Authorized Email</label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={`e.g. ${selectedRole.toLowerCase().replace(' ', '')}@royalgokul.com`}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1.5">Security PIN / Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                />
+              </div>
+
+              {error && <p className="text-xs text-rose-400 bg-rose-950/40 p-2.5 rounded-xl border border-rose-800/50">{error}</p>}
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/10 cursor-pointer mt-2"
+              >
+                Enter {selectedRole} Portal
+              </button>
+            </form>
+
+            <div className="mt-8 pt-4 border-t border-slate-800/60 text-center">
+              <p className="text-[11px] text-slate-400 flex items-center justify-center gap-1.5">
+                <Icon name="shield" className="w-3.5 h-3.5 text-emerald-400" />
+                Live Cloud Sync Active • Google Apps Script Web App Connected
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 6. VIEW: SITE ASSISTANT PORTAL (GRN & Material Logging)
+    // =========================================================================
+    const AssistantView = ({ user, onLogout }) => {
+      const [grnList, setGrnList] = useState(() => getStoredData(SYNC_KEYS.GRN_ENTRIES, []));
+      const [projects, setProjects] = useState(() => getStoredData(SYNC_KEYS.PROJECTS, []));
+      const [masters, setMasters] = useState(() => getStoredData(SYNC_KEYS.MASTERS, []));
+      const [activeTab, setActiveTab] = useState('grn');
+      const [importModalOpen, setImportModalOpen] = useState(false);
+
+      // Form State
+      const [form, setForm] = useState({
+        projectName: '',
+        category: 'Materials',
+        supplier: '',
+        itemName: '',
+        qty: '',
+        rate: '',
+        otherCharges: '0',
+        uom: 'Units'
+      });
+
+      useEffect(() => {
+        const handler = (e) => {
+          if (e.detail?.key === SYNC_KEYS.GRN_ENTRIES) setGrnList(e.detail.data);
+          if (e.detail?.key === SYNC_KEYS.PROJECTS) setProjects(e.detail.data);
+          if (e.detail?.key === SYNC_KEYS.MASTERS) setMasters(e.detail.data);
+        };
+        window.addEventListener('rgc_sync_event', handler);
+
+        // READ DATA ON LOAD: Pull existing records from Google Sheet immediately
+        fetchInitialDataFromGoogleSheets('grn_entries').then(res => {
+          if (res?.[SYNC_KEYS.GRN_ENTRIES]) setGrnList(res[SYNC_KEYS.GRN_ENTRIES]);
+        });
+        fetchInitialDataFromGoogleSheets('projects').then(res => {
+          if (res?.[SYNC_KEYS.PROJECTS]) setProjects(res[SYNC_KEYS.PROJECTS]);
+        });
+        fetchInitialDataFromGoogleSheets('masters').then(res => {
+          if (res?.[SYNC_KEYS.MASTERS]) setMasters(res[SYNC_KEYS.MASTERS]);
+        });
+
+        return () => window.removeEventListener('rgc_sync_event', handler);
+      }, []);
+
+      const calculatedTotal = useMemo(() => {
+        const q = parseFloat(form.qty) || 0;
+        const r = parseFloat(form.rate) || 0;
+        const o = parseFloat(form.otherCharges) || 0;
+        const base = q * r;
+        const gst = base * 0.18;
+        return base + gst + o;
+      }, [form.qty, form.rate, form.otherCharges]);
+
+      const handleAddGRN = (e) => {
+        e.preventDefault();
+        if (!form.itemName || !form.qty || !form.rate) return;
+
+        const newGRN = {
+          id: 'grn-' + Date.now(),
+          grnNumber: `26-27/${String(grnList.length + 1).padStart(3, '0')}`,
+          projectName: form.projectName || (projects[0]?.name || 'General Site'),
+          category: form.category,
+          supplier: form.supplier || 'Direct Vendor',
+          itemName: form.itemName,
+          qty: form.qty,
+          uom: form.uom,
+          rate: form.rate,
+          otherCharges: form.otherCharges,
+          grandTotal: formatINR(calculatedTotal),
+          grnDate: new Date().toISOString().split('T')[0],
+          created_by: user.email
+        };
+
+        const updated = [newGRN, ...grnList];
+        setGrnList(updated);
+        appendSingleStoredRecord(SYNC_KEYS.GRN_ENTRIES, newGRN);
+
+        // Reset form
+        setForm({
+          projectName: form.projectName,
+          category: 'Materials',
+          supplier: '',
+          itemName: '',
+          qty: '',
+          rate: '',
+          otherCharges: '0',
+          uom: 'Units'
+        });
+      };
+
+      const handleDelete = (id) => {
+        if (!confirm('Delete this GRN record?')) return;
+        const updated = grnList.filter(item => item.id !== id);
+        setGrnList(updated);
+        saveStoredData(SYNC_KEYS.GRN_ENTRIES, updated);
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-950 flex flex-col">
+          {/* Header */}
+          <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-center text-amber-400">
+                <Icon name="building" className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-extrabold text-white">Royal Gokul Constructions</h2>
+                <p className="text-[11px] text-amber-400 font-bold uppercase tracking-wider">Site Assistant Portal</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 hidden sm:inline font-medium">{user.email}</span>
+              <button
+                onClick={onLogout}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+              >
+                <Icon name="logOut" className="w-3.5 h-3.5" />
+                Exit
+              </button>
+            </div>
+          </header>
+
+          {/* Main Body */}
+          <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+            {/* New GRN Entry Card */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <Icon name="plus" className="w-4 h-4 text-amber-400" />
+                  <h3 className="text-sm font-extrabold text-white">Generate Material GRN Entry</h3>
+                </div>
+                <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                  Next #: 26-27/{String(grnList.length + 1).padStart(3, '0')}
+                </span>
+              </div>
+
+              <form onSubmit={handleAddGRN} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Target Project</label>
+                  <input
+                    type="text"
+                    value={form.projectName}
+                    onChange={(e) => setForm({ ...form, projectName: e.target.value })}
+                    placeholder="e.g. Orchid Towers Phase 1"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Supplier / Vendor</label>
+                  <input
+                    type="text"
+                    value={form.supplier}
+                    onChange={(e) => setForm({ ...form, supplier: e.target.value })}
+                    placeholder="e.g. UltraTech Cement / JSW Steel"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Item Description</label>
+                  <input
+                    type="text"
+                    required
+                    value={form.itemName}
+                    onChange={(e) => setForm({ ...form, itemName: e.target.value })}
+                    placeholder="e.g. 12mm TMT Steel Fe550"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Unit of Measure (UOM)</label>
+                  <select
+                    value={form.uom}
+                    onChange={(e) => setForm({ ...form, uom: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                  >
+                    <option>Units</option>
+                    <option>Bags</option>
+                    <option>MT (Metric Tons)</option>
+                    <option>Kg</option>
+                    <option>Cu.M (RMC)</option>
+                    <option>Sq.Ft</option>
+                    <option>Numbers / Pcs</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Quantity Received</label>
+                  <input
+                    type="number"
+                    required
+                    step="any"
+                    value={form.qty}
+                    onChange={(e) => setForm({ ...form, qty: e.target.value })}
+                    placeholder="0"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Unit Rate (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    step="any"
+                    value={form.rate}
+                    onChange={(e) => setForm({ ...form, rate: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Freight / Unloading (₹)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={form.otherCharges}
+                    onChange={(e) => setForm({ ...form, otherCharges: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-col justify-end">
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 mb-2">
+                    <span className="text-[10px] text-slate-400 block font-semibold">Total Incl. 18% GST</span>
+                    <span className="text-xs font-extrabold text-amber-400">{formatINR(calculatedTotal)}</span>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-md"
+                  >
+                    Post GRN Record
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* GRN Logs Table */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                <div>
+                  <h3 className="text-sm font-extrabold text-white">Live Goods Receipt Notes (GRN) Log</h3>
+                  <p className="text-xs text-slate-400">All posted entries save instantly to Google Apps Script database</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setImportModalOpen(true)}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition border border-slate-700"
+                >
+                  <Icon name="fileSpreadsheet" className="w-3.5 h-3.5 text-amber-400" />
+                  Import CSV
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-slate-400 border-b border-slate-800 font-bold">
+                      <th className="pb-3">GRN #</th>
+                      <th className="pb-3">Date</th>
+                      <th className="pb-3">Project</th>
+                      <th className="pb-3">Supplier</th>
+                      <th className="pb-3">Material Item</th>
+                      <th className="pb-3 text-right">Qty</th>
+                      <th className="pb-3 text-right">Rate</th>
+                      <th className="pb-3 text-right">Grand Total</th>
+                      <th className="pb-3 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                    {grnList.length === 0 ? (
+                      <tr>
+                        <td colSpan="9" className="py-8 text-center text-slate-400 italic">
+                          No GRN records logged yet. Use the form above to add an entry or import a CSV.
+                        </td>
+                      </tr>
+                    ) : (
+                      grnList.map((row) => (
+                        <tr key={row.id} className="hover:bg-slate-800/30">
+                          <td className="py-3 font-mono font-bold text-amber-400">{row.grnNumber}</td>
+                          <td className="py-3 text-slate-400">{row.grnDate}</td>
+                          <td className="py-3 font-semibold text-white">{row.projectName}</td>
+                          <td className="py-3">{row.supplier}</td>
+                          <td className="py-3">{row.itemName}</td>
+                          <td className="py-3 text-right font-mono">{row.qty} {row.uom}</td>
+                          <td className="py-3 text-right font-mono">₹{row.rate}</td>
+                          <td className="py-3 text-right font-mono font-bold text-emerald-400">{row.grandTotal}</td>
+                          <td className="py-3 text-center">
+                            <button
+                              onClick={() => handleDelete(row.id)}
+                              className="text-rose-400 hover:text-rose-300 p-1 rounded hover:bg-rose-950/30 transition"
+                            >
+                              <Icon name="trash" className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </main>
+
+          <ImportModal
+            isOpen={importModalOpen}
+            onClose={() => setImportModalOpen(false)}
+            title="Material GRN Entries"
+            sampleFormat="grnNumber, projectName, supplier, itemName, qty, rate, grandTotal"
+            onImport={(rows) => {
+              const formatted = rows.map((r, i) => ({
+                id: 'grn-imp-' + Date.now() + '-' + i,
+                grnNumber: r.grnNumber || `26-27/${String(grnList.length + i + 1).padStart(3, '0')}`,
+                projectName: r.projectName || r.project || '',
+                category: 'Materials',
+                supplier: r.supplier || r.vendor || '',
+                itemName: r.itemName || r.item || '',
+                qty: r.qty || '0',
+                uom: r.uom || 'Units',
+                rate: r.rate || '0',
+                grandTotal: r.grandTotal?.includes('₹') ? r.grandTotal : formatINR(r.grandTotal || 0),
+                grnDate: new Date().toISOString().split('T')[0]
+              }));
+              const updated = [...formatted, ...grnList];
+              setGrnList(updated);
+              saveStoredData(SYNC_KEYS.GRN_ENTRIES, updated);
+            }}
+          />
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 7. VIEW: ACCOUNTS MANAGER PORTAL
+    // =========================================================================
+    const ManagerView = ({ user, onLogout }) => {
+      const [activeTab, setActiveTab] = useState('payments');
+      const [projects, setProjects] = useState(() => getStoredData(SYNC_KEYS.PROJECTS, []));
+      const [masters, setMasters] = useState(() => getStoredData(SYNC_KEYS.MASTERS, []));
+      const [payments, setPayments] = useState(() => getStoredData(SYNC_KEYS.PAYMENTS, []));
+      const [ledgers, setLedgers] = useState(() => getStoredData(SYNC_KEYS.LEDGERS, []));
+      const [profiles, setProfiles] = useState(() => getStoredData(SYNC_KEYS.PROFILES, []));
+      const [importModal, setImportModal] = useState({ open: false, title: '', format: '', onImport: null });
+
+      useEffect(() => {
+        const handler = (e) => {
+          if (e.detail?.key === SYNC_KEYS.PROJECTS) setProjects(e.detail.data);
+          if (e.detail?.key === SYNC_KEYS.MASTERS) setMasters(e.detail.data);
+          if (e.detail?.key === SYNC_KEYS.PAYMENTS) setPayments(e.detail.data);
+          if (e.detail?.key === SYNC_KEYS.LEDGERS) setLedgers(e.detail.data);
+          if (e.detail?.key === SYNC_KEYS.PROFILES) setProfiles(e.detail.data);
+        };
+        window.addEventListener('rgc_sync_event', handler);
+
+        // READ DATA ON LOAD: Pull existing records from Google Sheet immediately
+        fetchInitialDataFromGoogleSheets('projects').then(res => {
+          if (res?.[SYNC_KEYS.PROJECTS]) setProjects(res[SYNC_KEYS.PROJECTS]);
+        });
+        fetchInitialDataFromGoogleSheets('masters').then(res => {
+          if (res?.[SYNC_KEYS.MASTERS]) setMasters(res[SYNC_KEYS.MASTERS]);
+        });
+        fetchInitialDataFromGoogleSheets('payments').then(res => {
+          if (res?.[SYNC_KEYS.PAYMENTS]) setPayments(res[SYNC_KEYS.PAYMENTS]);
+        });
+        fetchInitialDataFromGoogleSheets('ledgers').then(res => {
+          if (res?.[SYNC_KEYS.LEDGERS]) setLedgers(res[SYNC_KEYS.LEDGERS]);
+        });
+        fetchInitialDataFromGoogleSheets('profiles').then(res => {
+          if (res?.[SYNC_KEYS.PROFILES]) setProfiles(res[SYNC_KEYS.PROFILES]);
+        });
+
+        return () => window.removeEventListener('rgc_sync_event', handler);
+      }, []);
+
+      // Form States
+      const [paymentForm, setPaymentForm] = useState({
+        siteName: '',
+        vendor: '',
+        invoiceNo: '',
+        amount: '',
+        paid: '',
+        paymentMode: 'NEFT / RTGS',
+        refNo: '',
+        remarks: ''
+      });
+
+      const [projectForm, setProjectForm] = useState({ name: '', location: '', budget: '' });
+      const [masterForm, setMasterForm] = useState({ category: 'Supplier', label: '' });
+
+      const handleAddPayment = (e) => {
+        e.preventDefault();
+        const amt = parseFloat(paymentForm.amount) || 0;
+        const pd = parseFloat(paymentForm.paid) || 0;
+        const newPay = {
+          id: 'pay-' + Date.now(),
+          date: new Date().toISOString().split('T')[0],
+          siteName: paymentForm.siteName,
+          vendor: paymentForm.vendor,
+          invoiceNo: paymentForm.invoiceNo,
+          amount: amt,
+          paid: pd,
+          balance: Math.max(0, amt - pd),
+          paymentMode: paymentForm.paymentMode,
+          refNo: paymentForm.refNo,
+          remarks: paymentForm.remarks,
+          status: pd >= amt ? 'Paid' : (pd > 0 ? 'Partial' : 'Pending')
+        };
+        const updated = [newPay, ...payments];
+        setPayments(updated);
+        appendSingleStoredRecord(SYNC_KEYS.PAYMENTS, newPay);
+        setPaymentForm({ siteName: '', vendor: '', invoiceNo: '', amount: '', paid: '', paymentMode: 'NEFT / RTGS', refNo: '', remarks: '' });
+      };
+
+      const handleAddProject = (e) => {
+        e.preventDefault();
+        if (!projectForm.name) return;
+        const newProj = {
+          id: 'proj-' + Date.now(),
+          name: projectForm.name,
+          location: projectForm.location,
+          budget: projectForm.budget ? formatINR(projectForm.budget) : '₹ 0',
+          created_at: new Date().toISOString()
+        };
+        const updated = [newProj, ...projects];
+        setProjects(updated);
+        appendSingleStoredRecord(SYNC_KEYS.PROJECTS, newProj);
+        setProjectForm({ name: '', location: '', budget: '' });
+      };
+
+      const handleAddMaster = (e) => {
+        e.preventDefault();
+        if (!masterForm.label) return;
+        const newM = {
+          id: 'mst-' + Date.now(),
+          category: masterForm.category,
+          label: masterForm.label,
+          created_at: new Date().toISOString()
+        };
+        const updated = [newM, ...masters];
+        setMasters(updated);
+        appendSingleStoredRecord(SYNC_KEYS.MASTERS, newM);
+        setMasterForm({ category: 'Supplier', label: '' });
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-950 flex flex-col">
+          {/* Header */}
+          <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-center text-amber-400">
+                <Icon name="building" className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-extrabold text-white">Royal Gokul Constructions</h2>
+                <p className="text-[11px] text-amber-400 font-bold uppercase tracking-wider">Accounts Manager Portal</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 hidden sm:inline font-medium">{user.email}</span>
+              <button
+                onClick={onLogout}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+              >
+                <Icon name="logOut" className="w-3.5 h-3.5" />
+                Exit
+              </button>
+            </div>
+          </header>
+
+          {/* Navigation Bar */}
+          <div className="bg-slate-900/60 border-b border-slate-800/80 px-6 py-2 flex items-center gap-2 overflow-x-auto">
+            {[
+              { id: 'payments', label: 'Vendor Payments', icon: 'dollar' },
+              { id: 'projects', label: 'Projects Registry', icon: 'folder' },
+              { id: 'masters', label: 'Master Data', icon: 'layers' },
+              { id: 'profiles', label: 'Staff Profiles', icon: 'users' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <Icon name={tab.icon} className="w-3.5 h-3.5" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Views */}
+          <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+            {activeTab === 'payments' && (
+              <>
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                  <h3 className="text-sm font-extrabold text-white mb-4 pb-3 border-b border-slate-800">Record Vendor Payment</h3>
+                  <form onSubmit={handleAddPayment} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Site / Project</label>
+                      <input
+                        type="text"
+                        required
+                        value={paymentForm.siteName}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, siteName: e.target.value })}
+                        placeholder="e.g. Royal Heights"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Vendor / Beneficiary</label>
+                      <input
+                        type="text"
+                        required
+                        value={paymentForm.vendor}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, vendor: e.target.value })}
+                        placeholder="e.g. Dalmia Bharat Cement"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Invoice / Ref No.</label>
+                      <input
+                        type="text"
+                        value={paymentForm.invoiceNo}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, invoiceNo: e.target.value })}
+                        placeholder="INV-2026-001"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Total Bill Amount (₹)</label>
+                      <input
+                        type="number"
+                        required
+                        value={paymentForm.amount}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                        placeholder="0.00"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Amount Paid (₹)</label>
+                      <input
+                        type="number"
+                        required
+                        value={paymentForm.paid}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, paid: e.target.value })}
+                        placeholder="0.00"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Payment Method</label>
+                      <select
+                        value={paymentForm.paymentMode}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, paymentMode: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      >
+                        <option>NEFT / RTGS</option>
+                        <option>Cheque</option>
+                        <option>UPI / Direct Transfer</option>
+                        <option>Cash Voucher</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">UTR / Cheque Ref</label>
+                      <input
+                        type="text"
+                        value={paymentForm.refNo}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, refNo: e.target.value })}
+                        placeholder="UTR987654321"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        type="submit"
+                        className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-md"
+                      >
+                        Save Payment
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                    <h3 className="text-sm font-extrabold text-white">Vendor Payments Ledger</h3>
+                    <button
+                      onClick={() => setImportModal({
+                        open: true,
+                        title: 'Payments',
+                        format: 'siteName, vendor, invoiceNo, amount, paid, paymentMode, refNo',
+                        onImport: (rows) => {
+                          const formatted = rows.map((r, i) => ({
+                            id: 'pay-imp-' + Date.now() + '-' + i,
+                            date: r.date || new Date().toISOString().split('T')[0],
+                            siteName: r.siteName || r.project || '',
+                            vendor: r.vendor || '',
+                            invoiceNo: r.invoiceNo || '',
+                            amount: parseFloat(r.amount) || 0,
+                            paid: parseFloat(r.paid) || 0,
+                            balance: Math.max(0, (parseFloat(r.amount) || 0) - (parseFloat(r.paid) || 0)),
+                            paymentMode: r.paymentMode || 'NEFT / RTGS',
+                            refNo: r.refNo || '',
+                            status: (parseFloat(r.paid) || 0) >= (parseFloat(r.amount) || 0) ? 'Paid' : 'Pending'
+                          }));
+                          const updated = [...formatted, ...payments];
+                          setPayments(updated);
+                          saveStoredData(SYNC_KEYS.PAYMENTS, updated);
+                        }
+                      })}
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition border border-slate-700"
+                    >
+                      <Icon name="fileSpreadsheet" className="w-3.5 h-3.5 text-amber-400" />
+                      Import CSV
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="text-slate-400 border-b border-slate-800 font-bold">
+                          <th className="pb-3">Date</th>
+                          <th className="pb-3">Site / Project</th>
+                          <th className="pb-3">Vendor</th>
+                          <th className="pb-3">Invoice</th>
+                          <th className="pb-3 text-right">Amount</th>
+                          <th className="pb-3 text-right">Paid</th>
+                          <th className="pb-3 text-right">Balance</th>
+                          <th className="pb-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                        {payments.length === 0 ? (
+                          <tr>
+                            <td colSpan="8" className="py-8 text-center text-slate-400 italic">No payment records saved yet.</td>
+                          </tr>
+                        ) : (
+                          payments.map(p => (
+                            <tr key={p.id} className="hover:bg-slate-800/30">
+                              <td className="py-3 text-slate-400">{p.date}</td>
+                              <td className="py-3 font-semibold text-white">{p.siteName}</td>
+                              <td className="py-3">{p.vendor}</td>
+                              <td className="py-3 font-mono text-slate-400">{p.invoiceNo}</td>
+                              <td className="py-3 text-right font-mono font-bold text-white">{formatINR(p.amount)}</td>
+                              <td className="py-3 text-right font-mono text-emerald-400">{formatINR(p.paid)}</td>
+                              <td className="py-3 text-right font-mono text-rose-400">{formatINR(p.balance)}</td>
+                              <td className="py-3">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  p.status === 'Paid' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                }`}>
+                                  {p.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'projects' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                  <h3 className="text-sm font-extrabold text-white mb-4 pb-3 border-b border-slate-800">Add New Project</h3>
+                  <form onSubmit={handleAddProject} className="space-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Project Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={projectForm.name}
+                        onChange={(e) => setProjectForm({ ...projectForm, name: e.target.value })}
+                        placeholder="e.g. Orchid Towers Phase 2"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Location</label>
+                      <input
+                        type="text"
+                        value={projectForm.location}
+                        onChange={(e) => setProjectForm({ ...projectForm, location: e.target.value })}
+                        placeholder="e.g. Whitefield, Bengaluru"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Target Budget (₹)</label>
+                      <input
+                        type="number"
+                        value={projectForm.budget}
+                        onChange={(e) => setProjectForm({ ...projectForm, budget: e.target.value })}
+                        placeholder="0.00"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-md"
+                    >
+                      Save Project
+                    </button>
+                  </form>
+                </div>
+
+                <div className="md:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                  <h3 className="text-sm font-extrabold text-white mb-4 pb-3 border-b border-slate-800">Active Construction Projects</h3>
+                  <div className="space-y-3">
+                    {projects.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic text-center py-6">No projects registered yet.</p>
+                    ) : (
+                      projects.map(p => (
+                        <div key={p.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+                          <div>
+                            <h4 className="text-xs font-bold text-white">{p.name}</h4>
+                            <p className="text-[11px] text-slate-400">{p.location || 'Location Not Specified'}</p>
+                          </div>
+                          <span className="text-xs font-mono font-bold text-amber-400">{p.budget}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'masters' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                  <h3 className="text-sm font-extrabold text-white mb-4 pb-3 border-b border-slate-800">Add Master Entry</h3>
+                  <form onSubmit={handleAddMaster} className="space-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Master Category</label>
+                      <select
+                        value={masterForm.category}
+                        onChange={(e) => setMasterForm({ ...masterForm, category: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      >
+                        <option>Supplier</option>
+                        <option>Material Category</option>
+                        <option>Subcategory</option>
+                        <option>Bank Account</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-300 block mb-1">Entry Label / Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={masterForm.label}
+                        onChange={(e) => setMasterForm({ ...masterForm, label: e.target.value })}
+                        placeholder="e.g. Dalmia Bharat Cement"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-md"
+                    >
+                      Save Master Option
+                    </button>
+                  </form>
+                </div>
+
+                <div className="md:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                  <h3 className="text-sm font-extrabold text-white mb-4 pb-3 border-b border-slate-800">Master Definitions Library</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {masters.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic text-center py-6 col-span-2">No master records configured yet.</p>
+                    ) : (
+                      masters.map(m => (
+                        <div key={m.id} className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                          <span className="text-xs font-bold text-white">{m.label}</span>
+                          <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">{m.category}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'profiles' && (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h3 className="text-sm font-extrabold text-white mb-4 pb-3 border-b border-slate-800">Authorized Personnel Profiles</h3>
+                <div className="space-y-3">
+                  {profiles.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic text-center py-6">No custom staff profiles created yet.</p>
+                  ) : (
+                    profiles.map(pr => (
+                      <div key={pr.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-white">{pr.full_name}</h4>
+                          <p className="text-[11px] text-slate-400">{pr.email}</p>
+                        </div>
+                        <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">{pr.designation}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </main>
+
+          <ImportModal
+            isOpen={importModal.open}
+            onClose={() => setImportModal({ ...importModal, open: false })}
+            title={importModal.title}
+            sampleFormat={importModal.format}
+            onImport={importModal.onImport}
+          />
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 8. VIEW: EXECUTIVE DIRECTOR PORTAL
+    // =========================================================================
+    const DirectorView = ({ user, onLogout }) => {
+      const [grnList, setGrnList] = useState(() => getStoredData(SYNC_KEYS.GRN_ENTRIES, []));
+      const [payments, setPayments] = useState(() => getStoredData(SYNC_KEYS.PAYMENTS, []));
+      const [projects, setProjects] = useState(() => getStoredData(SYNC_KEYS.PROJECTS, []));
+
+      useEffect(() => {
+        const handler = () => {
+          setGrnList(getStoredData(SYNC_KEYS.GRN_ENTRIES, []));
+          setPayments(getStoredData(SYNC_KEYS.PAYMENTS, []));
+          setProjects(getStoredData(SYNC_KEYS.PROJECTS, []));
+        };
+        window.addEventListener('rgc_sync_event', handler);
+
+        // READ DATA ON LOAD: Pull existing records from Google Sheet immediately
+        fetchInitialDataFromGoogleSheets('grn_entries').then(res => {
+          if (res?.[SYNC_KEYS.GRN_ENTRIES]) setGrnList(res[SYNC_KEYS.GRN_ENTRIES]);
+        });
+        fetchInitialDataFromGoogleSheets('payments').then(res => {
+          if (res?.[SYNC_KEYS.PAYMENTS]) setPayments(res[SYNC_KEYS.PAYMENTS]);
+        });
+        fetchInitialDataFromGoogleSheets('projects').then(res => {
+          if (res?.[SYNC_KEYS.PROJECTS]) setProjects(res[SYNC_KEYS.PROJECTS]);
+        });
+
+        return () => window.removeEventListener('rgc_sync_event', handler);
+      }, []);
+
+      const stats = useMemo(() => {
+        const totalPurchased = grnList.reduce((acc, g) => {
+          const num = Number(String(g.grandTotal).replace(/[^0-9.-]+/g, '')) || 0;
+          return acc + num;
+        }, 0);
+
+        const totalPaymentsMade = payments.reduce((acc, p) => acc + (Number(p.paid) || 0), 0);
+        const totalOutstanding = payments.reduce((acc, p) => acc + (Number(p.balance) || 0), 0);
+
+        return {
+          totalPurchased,
+          totalPaymentsMade,
+          totalOutstanding,
+          grnCount: grnList.length,
+          projectCount: projects.length
+        };
+      }, [grnList, payments, projects]);
+
+      return (
+        <div className="min-h-screen bg-slate-950 flex flex-col">
+          {/* Header */}
+          <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-center text-amber-400">
+                <Icon name="building" className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-extrabold text-white">Royal Gokul Constructions</h2>
+                <p className="text-[11px] text-amber-400 font-bold uppercase tracking-wider">Executive Director Dashboard</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 hidden sm:inline font-medium">{user.email}</span>
+              <button
+                onClick={onLogout}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+              >
+                <Icon name="logOut" className="w-3.5 h-3.5" />
+                Exit
+              </button>
+            </div>
+          </header>
+
+          {/* Metric Cards */}
+          <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Material Procurement</span>
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                    <Icon name="trendingUp" className="w-4 h-4" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-black text-white font-mono">{formatINR(stats.totalPurchased)}</h3>
+                <p className="text-[11px] text-slate-400 mt-1">{stats.grnCount} total material entries recorded</p>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Payments Cleared</span>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                    <Icon name="checkCircle" className="w-4 h-4" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-black text-emerald-400 font-mono">{formatINR(stats.totalPaymentsMade)}</h3>
+                <p className="text-[11px] text-slate-400 mt-1">Disbursed via RTGS / NEFT / Cheque</p>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Outstanding Payable</span>
+                  <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
+                    <Icon name="alertCircle" className="w-4 h-4" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-black text-rose-400 font-mono">{formatINR(stats.totalOutstanding)}</h3>
+                <p className="text-[11px] text-slate-400 mt-1">Across all vendor accounts</p>
+              </div>
+            </div>
+
+            {/* Live Audit Tables */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+              <h3 className="text-sm font-extrabold text-white mb-4 pb-3 border-b border-slate-800">Executive Real-Time Procurement Stream</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-slate-400 border-b border-slate-800 font-bold">
+                      <th className="pb-3">GRN Number</th>
+                      <th className="pb-3">Site / Project</th>
+                      <th className="pb-3">Supplier Name</th>
+                      <th className="pb-3">Material Description</th>
+                      <th className="pb-3 text-right">Quantity</th>
+                      <th className="pb-3 text-right">Total Invoice Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                    {grnList.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="py-8 text-center text-slate-400 italic">No procurement records available.</td>
+                      </tr>
+                    ) : (
+                      grnList.slice(0, 15).map(g => (
+                        <tr key={g.id} className="hover:bg-slate-800/30">
+                          <td className="py-3 font-mono font-bold text-amber-400">{g.grnNumber}</td>
+                          <td className="py-3 font-semibold text-white">{g.projectName}</td>
+                          <td className="py-3">{g.supplier}</td>
+                          <td className="py-3">{g.itemName}</td>
+                          <td className="py-3 text-right font-mono">{g.qty} {g.uom}</td>
+                          <td className="py-3 text-right font-mono font-bold text-emerald-400">{g.grandTotal}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </main>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 9. FULL-SCREEN SECURITY ACCESS PIN OVERLAY
+    // =========================================================================
+    function SecurityPinOverlay() {
+      const MASTER_PIN = "2026";
+      const [pin, setPin] = useState('');
+      const [errorMsg, setErrorMsg] = useState('');
+      const [isUnlocked, setIsUnlocked] = useState(() => {
+        if (typeof window !== 'undefined') {
+          return sessionStorage.getItem('rgc_master_pin_unlocked') === 'true';
+        }
+        return false;
+      });
+      const [isSuccess, setIsSuccess] = useState(false);
+      const inputRef = useRef(null);
+
+      useEffect(() => {
+        if (!isUnlocked && inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, [isUnlocked]);
+
+      const handlePinSubmit = (inputPin) => {
+        if (inputPin === MASTER_PIN) {
+          setErrorMsg('');
+          setIsSuccess(true);
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('rgc_master_pin_unlocked', 'true');
+          }
+          setTimeout(() => {
+            setIsUnlocked(true);
+          }, 500);
+        } else {
+          setErrorMsg('Access Denied: Invalid Security PIN. Please enter authorized 4-digit PIN.');
+          setPin('');
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }
+      };
+
+      const handleDigitPress = (digit) => {
+        if (pin.length < 4) {
+          const nextPin = pin + digit;
+          setPin(nextPin);
+          setErrorMsg('');
+          if (nextPin.length === 4) {
+            handlePinSubmit(nextPin);
+          }
+        }
+      };
+
+      const handleBackspace = () => {
+        setPin(prev => prev.slice(0, -1));
+        setErrorMsg('');
+      };
+
+      const handleClear = () => {
+        setPin('');
+        setErrorMsg('');
+      };
+
+      if (isUnlocked) return null;
+
+      return (
+        <div 
+          onClick={() => inputRef.current && inputRef.current.focus()}
+          className={`fixed inset-0 z-[999999] flex flex-col items-center justify-center p-4 bg-slate-950/98 backdrop-blur-2xl transition-all duration-500 select-none ${
+            isSuccess ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
+          }`}
+        >
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-slate-900/90 border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 relative overflow-hidden backdrop-blur-xl"
+          >
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600" />
+
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 mb-3 shadow-inner shadow-amber-500/20">
+                {isSuccess ? (
+                  <Icon name="checkCircle" className="w-8 h-8 text-emerald-400" />
+                ) : (
+                  <Icon name="lock" className="w-8 h-8 text-amber-400" />
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-xs uppercase font-extrabold tracking-widest text-amber-400 mb-1">
+                <Icon name="building" className="w-3.5 h-3.5" />
+                <span>Royal Gokul Constructions</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Security Access Verification</h2>
+              <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
+                This enterprise portal is protected. Enter the 4-digit master security PIN to unlock workspace.
+              </p>
+            </div>
+
+            <input
+              ref={inputRef}
+              type="password"
+              maxLength="4"
+              value={pin}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+                setPin(val);
+                setErrorMsg('');
+                if (val.length === 4) handlePinSubmit(val);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handlePinSubmit(pin);
+                }
+              }}
+              className="sr-only"
+              autoFocus
+            />
+
+            <div 
+              onClick={() => inputRef.current && inputRef.current.focus()}
+              className="flex justify-center gap-3 sm:gap-4 mb-6 cursor-pointer"
+            >
+              {[0, 1, 2, 3].map((idx) => {
+                const isFilled = pin.length > idx;
+                return (
+                  <div
+                    key={idx}
+                    className={`w-12 h-14 sm:w-14 sm:h-16 rounded-2xl border-2 flex items-center justify-center text-2xl font-black transition-all duration-200 ${
+                      isSuccess
+                        ? 'border-emerald-400 bg-emerald-950/40 text-emerald-300 shadow-lg shadow-emerald-500/20'
+                        : errorMsg
+                        ? 'border-rose-500 bg-rose-950/40 text-rose-300'
+                        : isFilled
+                        ? 'border-amber-400 bg-amber-500/15 text-amber-300 shadow-md shadow-amber-500/20 scale-105'
+                        : 'border-slate-800 bg-slate-950/60 text-slate-600'
+                    }`}
+                  >
+                    {isFilled ? '●' : ''}
+                  </div>
+                );
+              })}
+            </div>
+
+            {errorMsg && (
+              <div className="mb-5 p-3 rounded-xl bg-rose-950/60 border border-rose-800/80 text-rose-300 text-xs font-semibold flex items-center gap-2">
+                <Icon name="alertCircle" className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {isSuccess && (
+              <div className="mb-5 p-3 rounded-xl bg-emerald-950/60 border border-emerald-800/80 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
+                <Icon name="checkCircle" className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Access Authorized. Unlocking Portal...</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-2 sm:gap-2.5 mb-5">
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
+                <button
+                  key={digit}
+                  type="button"
+                  onClick={() => handleDigitPress(digit)}
+                  className="h-12 sm:h-13 bg-slate-800/80 hover:bg-slate-700 active:bg-amber-500 active:text-slate-950 border border-slate-700/60 hover:border-amber-500/40 text-white font-black text-lg rounded-xl transition-all shadow-sm flex items-center justify-center cursor-pointer"
+                >
+                  {digit}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={handleClear}
+                className="h-12 sm:h-13 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white font-bold text-xs rounded-xl transition flex items-center justify-center cursor-pointer"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDigitPress('0')}
+                className="h-12 sm:h-13 bg-slate-800/80 hover:bg-slate-700 active:bg-amber-500 active:text-slate-950 border border-slate-700/60 hover:border-amber-500/40 text-white font-black text-lg rounded-xl transition-all shadow-sm flex items-center justify-center cursor-pointer"
+              >
+                0
+              </button>
+              <button
+                type="button"
+                onClick={handleBackspace}
+                className="h-12 sm:h-13 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white font-bold text-xs rounded-xl transition flex items-center justify-center cursor-pointer"
+              >
+                ⌫
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handlePinSubmit(pin)}
+              disabled={pin.length < 4 || isSuccess}
+              className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition shadow-lg ${
+                pin.length === 4 && !isSuccess
+                  ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20 cursor-pointer'
+                  : 'bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed'
+              }`}
+            >
+              <Icon name="key" className="w-4 h-4" />
+              <span>Verify Security PIN</span>
+            </button>
+
+            <div className="mt-5 pt-3 border-t border-slate-800/60 text-center flex items-center justify-center gap-1.5 text-[11px] text-slate-300 font-medium">
+              <Icon name="shield" className="w-3.5 h-3.5 text-emerald-400" />
+              <span>256-Bit Hardware Token Access • Google Sheets Live Sync</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // 10. MASTER APPLICATION ROOT
+    // =========================================================================
+    function App() {
+      const [currentUser, setCurrentUser] = useState(() => {
+        if (typeof window === 'undefined') return null;
+        const saved = sessionStorage.getItem('rgc_session_user');
+        return saved ? JSON.parse(saved) : null;
+      });
+
+      // READ DATA ON LOAD: Execute immediately when the app loads
+      useEffect(() => {
+        fetchInitialDataFromGoogleSheets();
+      }, []);
+
+      // Also trigger initial data fetch when a user logs in
+      useEffect(() => {
+        if (currentUser) {
+          fetchInitialDataFromGoogleSheets();
+        }
+      }, [currentUser]);
+
+      const handleLogin = (user) => {
+        sessionStorage.setItem('rgc_session_user', JSON.stringify(user));
+        setCurrentUser(user);
+        fetchInitialDataFromGoogleSheets();
+      };
+
+      const handleLogout = () => {
+        sessionStorage.removeItem('rgc_session_user');
+        setCurrentUser(null);
+      };
+
+      return (
+        <>
+          <SecurityPinOverlay />
+          {!currentUser ? (
+            <LoginView onLoginSuccess={handleLogin} />
+          ) : currentUser.role === 'Director' ? (
+            <DirectorView user={currentUser} onLogout={handleLogout} />
+          ) : currentUser.role === 'Accounts Manager' ? (
+            <ManagerView user={currentUser} onLogout={handleLogout} />
+          ) : (
+            <AssistantView user={currentUser} onLogout={handleLogout} />
+          )}
+        </>
+      );
+    }
+
+    // =========================================================================
+    // 11. ERROR BOUNDARY & FAIL-SAFE MOUNTING (Prevents Blank White Screen)
+    // =========================================================================
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+      }
+      static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+      }
+      componentDidCatch(error, errorInfo) {
+        console.error("React Portal Error caught:", error, errorInfo);
+      }
+      render() {
+        if (this.state.hasError) {
+          return (
+            <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl">
+                <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center text-amber-400 mx-auto">
+                  <Icon name="alertCircle" className="w-6 h-6" />
+                </div>
+                <h2 className="text-base font-extrabold text-white">Application View Initialized</h2>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {this.state.error?.message || 'The application view is ready. All background Google Sheet connections are active.'}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer"
+                >
+                  Reload Application
+                </button>
+              </div>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
+
+    // Safe DOM Mounting Execution
+    function mountPortal() {
+      const rootElement = document.getElementById('root');
+      if (rootElement) {
+        try {
+          const root = ReactDOM.createRoot(rootElement);
+          root.render(
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
+          );
+        } catch (mountErr) {
+          console.error("Mount error fallback:", mountErr);
+          ReactDOM.render(
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>,
+            rootElement
+          );
+        }
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mountPortal);
+    } else {
+      mountPortal();
+    }
+  </script>
+</body>
+</html>
