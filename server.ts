@@ -3307,7 +3307,17 @@ app.post('/api/save-entry', async (req, res) => {
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+        watch: null
+      },
+      plugins: [{
+        name: 'remove-vite-client-from-hosted-preview',
+        transformIndexHtml(html) {
+          return html.replace(/\s*<script type="module" src="\/@vite\/client"><\/script>/g, '');
+        }
+      }],
       appType: 'spa'
     });
     app.use(vite.middlewares);
